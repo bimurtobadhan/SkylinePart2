@@ -4,7 +4,8 @@ package rtree;
  * Created by bimurto on 12/25/2015.
  */
 public class POIData {
-    public double x,y, a,b,c,d,type;
+    public double x,y, a,b,c,d;
+    public int type;
 
     public POIData(){
 

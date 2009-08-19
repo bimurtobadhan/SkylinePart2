@@ -15,7 +15,15 @@ public class Main {
     String filename = null;
     RTree tree = null;
 
+    double startX = 50;
+    double startY = 50;
+    double endX = 500;
+    double endY = 500;
+    int added = 0;
+    int notAdded = 0;
+    POIData data[] = new POIData[104770+1];
     List <Trip> trips3d = new ArrayList<>();
+    List <Trip> trip3dpart2 = new ArrayList<>();
     int count = 0;
     public Main(){
 //        try{
@@ -38,7 +46,44 @@ public class Main {
 
         //readFile();
 
+        initialize();
+
         testfor3d();
+
+
+
+    }
+
+    public void initialize(){
+        int counter,type;
+        double x1,y1;
+        File file = new File("DataSet/Input.txt");
+        try {
+            //writer = new FileWriter(new File("DataSet/Input.txt"));
+            Scanner input = new Scanner(file);
+            while(input.hasNext()){
+                counter = input.nextInt();
+                x1 = input.nextDouble();
+                y1 = input.nextDouble();
+                double a = input.nextDouble();
+                double b = input.nextDouble();
+                double c = input.nextDouble();
+                type = input.nextInt();
+                int i = counter;
+                //for(int i=0;i<=104770;i++){
+                    data[i] = new POIData();
+                    data[i].x = x1;
+                    data[i].y = y1;
+                    data[i].a = a;
+                    data[i].b = b;
+                    data[i].c = c;
+                    data[i].type = type;
+                //}
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println("DOne");
     }
 
     private void createCoOrdinateFile() {
@@ -316,13 +361,13 @@ public class Main {
 
 //        System.out.println("SkylineEntries: ");
 //        for(int i=0;i<skylineEntries.size();i++){
-//            System.out.println(skylineEntries.get(i));
+//            System.out.println(skylineEntries.get(i) +" "+skylineEntries.get(i).getData() );
 //        }
 //        System.out.println(skylineEntries.size());
         return skylineEntries;
     }
 
-    double minTripDist;
+    //double minTripDist;
 
     public void testfor3d(){
         HyperPoint origin = new HyperPoint(new double[]{50, 50, 0}) ;
@@ -354,12 +399,21 @@ public class Main {
 //            seq.add(4);
 //            seq.add(60);
 //            seq.add(50);
-            STPQ3d(seq, new Trip());
+            //STPQ3d(seq, new Trip());
+            STPQ3d2(seq, new Trip());
             //System.out.println("Result");
-            for(int i=0;i<trips3d.size();i++){
-                System.out.println(trips3d.get(i));
-            }
+            System.out.println("Size: "+ trips3d.size());
+//            for(int i=0;i<trips3d.size();i++){
+//                System.out.println(trips3d.get(i));
+//            }
+
+            System.out.println("MINTRIPDIST: " + minTripDist);
+
+            Ellipse ellipse = new Ellipse(50,500, 50, 500, (float) minTripDist/2);
+            System.out.println("Started Part2");
+            STPQ3dPart2(ellipse,seq);
         }
+        System.out.println("ResultCOunt: "+ (trips3d.size()+trip3dpart2.size()));
         long end = System.currentTimeMillis();
         long timeTaken = end - start;
         System.out.println(timeTaken);
@@ -367,6 +421,124 @@ public class Main {
         //skyline5d();
     }
 
+    private void STPQ3dPart2(Ellipse ellipse, ArrayList <Integer> seq ) {
+        RTree cordTree = null;
+        Vector<HyperBoundingBox> v = null;
+        trip3dpart2.clear();
+        try {
+            cordTree = new RTree("DataSet/treefile4co_ordinate");
+            v = cordTree.rangeQuery(ellipse);
+        } catch (RTreeException e) {
+            e.printStackTrace();
+        }
+
+        List<HyperBoundingBox> list [] = new ArrayList[seq.size()];
+        for(int i=0;i<seq.size();i++){
+            list[i] = new ArrayList<>();
+        }
+
+        for(int i=0;i<v.size();i++){
+            int d = v.get(i).getData();
+            int type = data[d].type;
+            if(seq.contains(type)){
+                int index = seq.indexOf(type);
+                list[index].add(v.get(i));
+            }
+        }
+
+        for(int i=0;i<seq.size();i++){
+            System.out.println(list[i].size());
+        }
+
+        STPQ2Part2_aux(list, seq, new Trip(), 0);
+        System.out.println(trip3dpart2.size());
+    }
+
+    public void STPQ2Part2_aux(List<HyperBoundingBox> skylist[], ArrayList<Integer> seq, Trip t, int counter){
+        if(seq.isEmpty()){
+            double x = t.calculateDistance(startX, startY, endX, endY);
+            //System.out.println(x + " "+ minTripDist);
+            if(x < minTripDist){
+                added++;
+                System.out.println("Added "+added);
+                trip3dpart2.add(new Trip(t));
+            }
+            notAdded++;
+            System.out.println("NOt Added "+notAdded);
+            return;
+        }
+
+        int type = seq.remove(0);
+//        String filename = "DataSet/3d/treeFile" + type;
+//        RTree tree = null;
+//        try {
+//            tree = new RTree(filename);
+//        } catch (RTreeException e) {
+//            e.printStackTrace();
+//        }
+
+        List <HyperBoundingBox> list = skylist[counter];
+        //System.out.println(list.size());
+        for(int i=0;i<list.size();i++){
+            int p = list.get(i).getData();
+            t.add(p);
+            STPQ2Part2_aux(skylist, seq, t, counter+1);
+            t.remove(p);
+        }
+        seq.add(0, type);
+    }
+
+
+    public void STPQ3d2(ArrayList<Integer> seq, Trip t){
+        List<HyperBoundingBox> list [] = new ArrayList[seq.size()];
+        for(int i=0;i<seq.size();i++){
+            int type = seq.get(i);
+            String filename = "DataSet/3d/treeFile" + type;
+            RTree tree = null;
+            try {
+                tree = new RTree(filename);
+            } catch (RTreeException e) {
+                e.printStackTrace();
+            }
+
+            list[i] = skylineExecute3d(tree);
+            System.out.println("list "+ i +" "+ list[i].size());
+        }
+
+        STPQ2_aux(list,seq,t,0);
+    }
+
+    double minTripDist = Double.MAX_VALUE;
+    public void STPQ2_aux(List<HyperBoundingBox> skylist[], ArrayList<Integer> seq, Trip t, int counter){
+        if(seq.isEmpty()){
+            trips3d.add(new Trip(t));
+            double x = t.calculateDistance(startX, startY, endX, endY);
+            //System.out.println(x + " "+ minTripDist);
+            if(x < minTripDist){
+                minTripDist = x;
+            }
+            return;
+        }
+
+        int type = seq.remove(0);
+//        String filename = "DataSet/3d/treeFile" + type;
+//        RTree tree = null;
+//        try {
+//            tree = new RTree(filename);
+//        } catch (RTreeException e) {
+//            e.printStackTrace();
+//        }
+
+        List <HyperBoundingBox> list = skylist[counter];
+        //System.out.println(list.size());
+        for(int i=0;i<list.size();i++){
+            int p = list.get(i).getData();
+            t.add(p);
+            STPQ2_aux(skylist, seq, t, counter+1);
+            t.remove(p);
+        }
+        seq.add(0,type);
+    }
 
     public void STPQ3d(ArrayList<Integer> seq, Trip t){
         if(seq.isEmpty()){
@@ -385,8 +557,9 @@ public class Main {
         }
 
         List <HyperBoundingBox> list = skylineExecute3d(tree);
+        //System.out.println(list.size());
         for(int i=0;i<list.size();i++){
-            HyperBoundingBox p = list.get(i);
+            int p = list.get(i).getData();
             t.add(p);
             STPQ3d(seq,t);
             t.remove(p);
@@ -405,7 +578,7 @@ public class Main {
     private class Trip{
         //        HyperPoint start;
 //        HyperPoint dest;
-        List <HyperBoundingBox> seq;
+        List <Integer> seq;
 
         public Trip(){
             seq = new ArrayList<>();
@@ -418,11 +591,28 @@ public class Main {
             //}
         }
 
-        public void add(HyperBoundingBox o){
+        public double calculateDistance(double x1, double y1, double x2, double y2){
+            double x = (x1 - data[seq.get(0)].x) * (x1 - data[seq.get(0)].x);
+            double y = (y1 - data[seq.get(0)].y) * (y1 - data[seq.get(0)].y);
+            double sum = Math.sqrt(x + y);
+            for(int i=1;i<seq.size();i++){
+                x = Math.pow((data[seq.get(i)].x - data[seq.get(i-1)].x),2) ;
+                y = Math.pow((data[seq.get(i)].y - data[seq.get(i-1)].y),2) ;
+                sum += Math.sqrt(x + y);
+            }
+            int last = seq.size()-1;
+            x = Math.pow((data[seq.get(last)].x - x2),2) ;
+            y = Math.pow((data[seq.get(last)].y - y2), 2) ;
+            sum += Math.sqrt(x + y);
+
+            return sum;
+        }
+
+        public void add(Integer o){
             seq.add(o);
         }
 
-        public void remove(HyperBoundingBox o){
+        public void remove(Integer o){
             seq.remove(o);
         }
 

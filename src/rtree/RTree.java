@@ -979,8 +979,9 @@ public class RTree {
 
 				HyperBoundingBox box = node.hyperBBs[i];
 				if(ellipse.inside(box.getPMin())){
-					v.addElement(node.getHyperBoundingBox(i));
-					System.out.println(node.hyperBBs[i] +  " Data: " + node.data[i]);
+					box.setData(node.data[i]);
+					v.addElement(box);
+					//System.out.println(node.hyperBBs[i] +  " Data: " + node.data[i]);
 				}
 
 			}
