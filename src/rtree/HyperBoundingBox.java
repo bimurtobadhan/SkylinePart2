@@ -78,7 +78,12 @@ public class HyperBoundingBox {
 	
 	private HyperPoint pMin, pMax;
 	private int data;
-		
+	//---------------------------------------------------------------
+	public int POIId;
+	public int type;
+	public int a, b, c, d;
+	public double x,y;
+	//---------------------------------------------------------------
 	/**
 	 * Constructor.<br>
 	 * Creates a HyperBoundingBox for given HyperPoints.

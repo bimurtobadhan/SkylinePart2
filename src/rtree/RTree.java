@@ -1154,7 +1154,4 @@ public class RTree {
 		}
 		return temp;
 	}
-
-
-
 }
