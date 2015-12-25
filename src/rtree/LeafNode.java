@@ -135,7 +135,7 @@ class LeafNode extends Node {
 	   	 	System.arraycopy(hyperBBs, index + 1, hyperBBs, index, counter - index - 1);
 	    	System.arraycopy(data, index + 1, data, index, counter - index - 1);
 	    	hyperBBs[counter-1] = HyperBoundingBox.getNullHyperBoundingBox(file.getDimension());
-	    	data[counter-1] = -1;	    	
+	    	data[counter-1] = -1;
 		}
 		counter--;
 		updateNodeBoundingBox();		

@@ -14,6 +14,8 @@ public class Main {
     Random rand = new Random();
     String filename = null;
     RTree tree = null;
+
+    List <Trip> trips3d = new ArrayList<>();
     int count = 0;
     public Main(){
 //        try{
@@ -22,8 +24,8 @@ public class Main {
 //            e.printStackTrace();
 //        }
 
-        //rtreeFileMaker3d();
-        readAll2();
+       // rtreeFileMaker3d();
+        //readAll2();
         //createCoOrdinateFile();
         //generateTreeFile();
         //readAll();
@@ -35,6 +37,8 @@ public class Main {
 //        }
 
         //readFile();
+
+        testfor3d();
     }
 
     private void createCoOrdinateFile() {
@@ -142,9 +146,9 @@ public class Main {
                 type = input.nextInt();
                 if(x1 != x2) nomatchX++;
                 if(y1 != y2) nomatchY++;
-                int a = random.nextInt(5)+1;
-                int b = random.nextInt(10)+1;
-                int d = random.nextInt(5)+1;
+                float a = (float)random.nextInt(50)/10 + (float).1;
+                float b = (float)random.nextInt(100)/10 + (float).1;
+                float d = (float)random.nextInt(50)/10 + (float).1;
                 c++;
                 // writer.write(x1+" "+y1+" "+a+" "+b+" "+type+"\n");
                 writer.write(counter+" "+x1+" "+y1+" "+a+" "+b+" "+d+" "+type+"\n");
@@ -240,7 +244,8 @@ public class Main {
     }
 
 
-    public void skylineExecute3d(RTree tree){
+    public List<HyperBoundingBox> skylineExecute3d(RTree tree){
+       // System.out.println("Entered");
         double MAX_COORDINATE_VALUE_X = 10;
         double MAX_COORDINATE_VALUE_Y = 10;
         double MAX_COORDINATE_VALUE_Z = 10;
@@ -288,7 +293,7 @@ public class Main {
                     skylineEntries.add(nn);
                     set.add(nn);
                 }
-                //System.out.println(nn);
+//                System.out.println(nn);
                 todoList.push(new HyperPoint(new double[]{nn.getPMin().getCoord(0) - .001, p.getCoord(1), p.getCoord(2)}));
                 todoList.push(new HyperPoint(new double[]{p.getCoord(0), nn.getPMin().getCoord(1) -.001, p.getCoord(2)}));
                 todoList.push(new HyperPoint(new double[]{p.getCoord(0), p.getCoord(1) , nn.getPMin().getCoord(2) -.001}));
@@ -309,10 +314,84 @@ public class Main {
 //            }
 //        });
 
-        System.out.println("SkylineEntries: ");
-        for(int i=0;i<skylineEntries.size();i++){
-            System.out.println(skylineEntries.get(i));
+//        System.out.println("SkylineEntries: ");
+//        for(int i=0;i<skylineEntries.size();i++){
+//            System.out.println(skylineEntries.get(i));
+//        }
+//        System.out.println(skylineEntries.size());
+        return skylineEntries;
+    }
+
+    double minTripDist;
+
+    public void testfor3d(){
+        HyperPoint origin = new HyperPoint(new double[]{50, 50, 0}) ;
+//        List<HyperPoint> s = skyline(origin, tree);
+//        System.out.println("All: ");
+//        for(int i=0;i<s.size();i++){
+//            System.out.println(s.get(i));
+//        }
+        long start = System.currentTimeMillis();
+        for(int j=0;j<1;j++){
+
+            trips3d.clear();
+            ArrayList <Integer> seq = new ArrayList<>();
+            int POItype = 3;
+            System.out.println("Start");
+            while(POItype != 0){
+                int a = rand.nextInt(63);
+                if(seq.contains(new Integer(a))){
+                    continue;
+                }
+                seq.add(a);
+                POItype--;
+            }
+            System.out.println("ENd "+ seq.size());
+            for(int i=0;i<seq.size();i++){
+                System.out.println(seq.get(i));
+            }
+//            seq.add(28);
+//            seq.add(4);
+//            seq.add(60);
+//            seq.add(50);
+            STPQ3d(seq, new Trip());
+            //System.out.println("Result");
+            for(int i=0;i<trips3d.size();i++){
+                System.out.println(trips3d.get(i));
+            }
         }
+        long end = System.currentTimeMillis();
+        long timeTaken = end - start;
+        System.out.println(timeTaken);
+
+        //skyline5d();
+    }
+
+
+    public void STPQ3d(ArrayList<Integer> seq, Trip t){
+        if(seq.isEmpty()){
+            trips3d.add(new Trip(t));
+            return;
+        }
+
+
+        int type = seq.remove(0);
+        String filename = "DataSet/3d/treeFile" + type;
+        RTree tree = null;
+        try {
+            tree = new RTree(filename);
+        } catch (RTreeException e) {
+            e.printStackTrace();
+        }
+
+        List <HyperBoundingBox> list = skylineExecute3d(tree);
+        for(int i=0;i<list.size();i++){
+            HyperBoundingBox p = list.get(i);
+            t.add(p);
+            STPQ3d(seq,t);
+            t.remove(p);
+        }
+        seq.add(0,type);
     }
 
 
@@ -320,4 +399,46 @@ public class Main {
         // TODO Auto-generated method stub
         new Main();
     }
+
+
+
+    private class Trip{
+        //        HyperPoint start;
+//        HyperPoint dest;
+        List <HyperBoundingBox> seq;
+
+        public Trip(){
+            seq = new ArrayList<>();
+        }
+
+        public Trip(Trip t){
+            seq = new ArrayList<>();
+            //for(int i=0;i<t.seq.size();i++){
+            seq.addAll(t.seq);
+            //}
+        }
+
+        public void add(HyperBoundingBox o){
+            seq.add(o);
+        }
+
+        public void remove(HyperBoundingBox o){
+            seq.remove(o);
+        }
+
+        @Override
+        public String toString() {
+            String s = "";
+            for(int i=0;i<seq.size();i++){
+                s += seq.get(i) + " ";
+            }
+            return s;
+        }
+
+//        @Override
+//        public boolean equals(Trip obj) {
+//            return super.equals(obj);
+//        }
+    }
+
 }
